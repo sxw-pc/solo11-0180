@@ -1,0 +1,44 @@
+[
+  {
+    "subsystem": "eligibility",
+    "event": {
+      "id": "e1",
+      "subject": "senior-1",
+      "action": "enroll",
+      "data": {
+        "monthly_limit": 30,
+        "version": 1
+      },
+      "effective_at": 1,
+      "received_at": 1
+    }
+  },
+  {
+    "subsystem": "eligibility",
+    "event": {
+      "id": "e2",
+      "subject": "senior-1",
+      "action": "reserve",
+      "data": {
+        "amount": 10
+      },
+      "effective_at": 2,
+      "received_at": 2
+    }
+  },
+  {
+    "subsystem": "service",
+    "event": {
+      "id": "s1",
+      "subject": "senior-1",
+      "action": "prepare",
+      "data": {
+        "meal": "lunch",
+        "stock": 3,
+        "orders": 1
+      },
+      "effective_at": 3,
+      "received_at": 3
+    }
+  }
+]
