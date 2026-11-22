@@ -1,0 +1,16 @@
+[
+  {
+    "subsystem": "eligibility",
+    "event": {
+      "id": "e1",
+      "subject": "senior-1",
+      "action": "enroll",
+      "data": {
+        "monthly_limit": 30,
+        "version": 1
+      },
+      "effective_at": 1,
+      "received_at": 1
+    }
+  }
+]
