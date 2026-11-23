@@ -1,5 +1,19 @@
 from . import storage as s
 NAME='核销与清算'
+
+def _confirmed_allocation(c,p):
+    """Return the confirmed allocation row a payable may consume.
+
+    An OCR ``claim`` acceptance is never enough: only a row persisted by a
+    confirmed global allocation run can create a merchant payable.
+    """
+    batch_id=str(p.get('batch_id',''));version=p.get('version');ticket_id=str(p.get('ticket_id',''))
+    if not batch_id or version is None or not ticket_id:return None
+    run=c.execute('SELECT * FROM ticket_allocation_runs WHERE batch_id=? AND version=?',(batch_id,int(version))).fetchone()
+    if not run or run['state']!='confirmed':return None
+    allocation=c.execute("SELECT * FROM ticket_allocations WHERE batch_id=? AND version=? AND ticket_id=? AND state='confirmed' AND voucher_id IS NOT NULL",(batch_id,int(version),ticket_id)).fetchone()
+    return allocation
+
 def apply(c,e):
  a=e['action'];p=e.get('data',{});sid=e['subject'];senior=s.latest(c,'subjects',sid)
  if a=='redeem':
@@ -12,6 +26,16 @@ def apply(c,e):
   c.execute('INSERT OR REPLACE INTO receipts VALUES(?,?,?,?,?)',(e['id'],sid,'merchant-payable','open',price))
   c.execute('INSERT OR REPLACE INTO documents VALUES(?,?,?,?,?)',(e['id'],sid,'redeem-link',1,quota['id']))
   return s.decide(c,e,NAME,'redeemed',f'subsidy={subsidy};copay={price-subsidy}','redeemed')
+ if a=='redeem_paper':
+  allocation=_confirmed_allocation(c,p)
+  if not allocation:return s.decide(c,e,NAME,'blocked','no-confirmed-allocation','blocked')
+  if allocation['recipient']!=sid:return s.decide(c,e,NAME,'blocked','allocation-recipient-mismatch','blocked')
+  consumed=c.execute("SELECT 1 FROM documents WHERE kind='voucher-redemption' AND state=? LIMIT 1",(allocation['id'],)).fetchone()
+  if consumed:return s.decide(c,e,NAME,'blocked','allocation-already-redeemed','blocked')
+  c.execute('INSERT OR REPLACE INTO receipts VALUES(?,?,?,?,?)',(e['id'],allocation['recipient'],'voucher-redemption','redeemed',allocation['amount']))
+  c.execute('INSERT OR REPLACE INTO receipts VALUES(?,?,?,?,?)',(e['id']+':payable',allocation['recipient'],'merchant-payable','open',allocation['amount']))
+  c.execute('INSERT OR REPLACE INTO documents VALUES(?,?,?,?,?)',(e['id'],allocation['recipient'],'voucher-redemption',int(allocation['version']),allocation['id']))
+  return s.decide(c,e,NAME,'redeemed',f'voucher={allocation["voucher_id"]};amount={allocation["amount"]}','redeemed')
  if a=='set_price':
   if int(p.get('price',0))<=0:return s.decide(c,e,NAME,'blocked','nonpositive-price','blocked')
   c.execute('INSERT OR REPLACE INTO documents VALUES(?,?,?,?,?)',(e['id'],p.get('meal','lunch'),'price',int(p.get('effective_at',e['effective_at'])),str(int(p['price']))))

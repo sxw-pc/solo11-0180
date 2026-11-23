@@ -1,0 +1,53 @@
+{
+  "description": "Two paper tickets from the same batch, read by OCR as colliding on A17. The issued book proves both A17 (10) and A71 (20). Each senior has one valid pickup. T1 carries a pending manual signature for A17. Withdrawing that signature needs both the signer and the issuer; if it is in a sealed period it cannot be withdrawn at all.",
+  "batch_id": "B-2026-11-A",
+  "book": [
+    {"voucher_id": "A17", "amount": 10, "book": "issue-book-7", "sealed_bag": "bag-3"},
+    {"voucher_id": "A71", "amount": 20, "book": "issue-book-7", "sealed_bag": "bag-3"}
+  ],
+  "tickets": [
+    {
+      "ticket_id": "T1",
+      "pickup_id": "P1",
+      "recipient": "senior-t1",
+      "source": "provider-a",
+      "images": [
+        {
+          "image_hash": "sha256:t1-original",
+          "received_at": 10,
+          "source": "provider-a",
+          "candidates": [
+            {"voucher_id": "A17", "amount": 10, "confidence": 0.9, "chars": "A17/10"},
+            {"voucher_id": "A71", "amount": 20, "confidence": 0.8, "chars": "A71/20"}
+          ]
+        }
+      ],
+      "signatures": [
+        {"signature_id": "SIG-T1-A17", "voucher_id": "A17", "state": "pending_review", "sealed": false, "sealed_period": ""}
+      ]
+    },
+    {
+      "ticket_id": "T2",
+      "pickup_id": "P2",
+      "recipient": "senior-t2",
+      "source": "provider-b",
+      "images": [
+        {
+          "image_hash": "sha256:t2-original",
+          "received_at": 11,
+          "source": "provider-b",
+          "candidates": [
+            {"voucher_id": "A17", "amount": 10, "confidence": 0.95, "chars": "A17/10"}
+          ]
+        }
+      ],
+      "signatures": []
+    }
+  ],
+  "approvals": {
+    "SIG-T1-A17": {"signer": true, "issuer": true}
+  },
+  "sealed_period": {
+    "SIG-T1-A17": {"signer": true, "issuer": true, "sealed": true, "sealed_period": "2026-11-close"}
+  }
+}
