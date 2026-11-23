@@ -1,0 +1,130 @@
+[
+  {
+    "subsystem": "eligibility",
+    "event": {
+      "id": "enroll-jia",
+      "subject": "senior-jia",
+      "action": "enroll",
+      "data": {"monthly_limit": 30, "version": 1},
+      "effective_at": 1,
+      "received_at": 1
+    }
+  },
+  {
+    "subsystem": "eligibility",
+    "event": {
+      "id": "enroll-yi",
+      "subject": "senior-yi",
+      "action": "enroll",
+      "data": {"monthly_limit": 30, "version": 1},
+      "effective_at": 2,
+      "received_at": 2
+    }
+  },
+  {
+    "subsystem": "voice",
+    "event": {
+      "id": "seg-c1",
+      "subject": "senior-jia",
+      "action": "segment",
+      "data": {
+        "segment": "C1",
+        "speaker": "senior-jia",
+        "start": 0.0,
+        "end": 4.2,
+        "audio": "sha256:a6afa0af3e394718f83efee1b9c6c0073e889770ff0512fcf48e4c624a15203d",
+        "nbest": [
+          {"text": "午餐订2份", "score": 0.9},
+          {"text": "午餐订1份", "score": 0.6}
+        ],
+        "review": "午餐订2份",
+        "action": "order",
+        "quantity": 2
+      },
+      "effective_at": 10,
+      "received_at": 10
+    }
+  },
+  {
+    "subsystem": "voice",
+    "event": {
+      "id": "seg-c2",
+      "subject": "senior-jia",
+      "action": "segment",
+      "data": {
+        "segment": "C2",
+        "speaker": "senior-jia",
+        "start": 30.5,
+        "end": 36.8,
+        "audio": "sha256:2640cf00e48209942c4473787ccfb971d8a78193f5f04ed5f44d085dd4ea73c9",
+        "nbest": [
+          {"text": "刚才2份中的1份转给乙", "score": 0.87},
+          {"text": "刚才2份中的1份转给李", "score": 0.41}
+        ],
+        "review": "刚才2份中的1份转给乙",
+        "action": "transfer",
+        "ref": "C1",
+        "recipient": "senior-yi",
+        "quantity": 1,
+        "confirm_by": 80
+      },
+      "effective_at": 20,
+      "received_at": 20
+    }
+  },
+  {
+    "subsystem": "voice",
+    "event": {
+      "id": "confirm-c2-yi",
+      "subject": "senior-yi",
+      "action": "confirm",
+      "data": {"segment": "C2", "signature": "yi-sign-20261123"},
+      "effective_at": 30,
+      "received_at": 30
+    }
+  },
+  {
+    "subsystem": "service",
+    "event": {
+      "id": "prep-jia",
+      "subject": "senior-jia",
+      "action": "prepare",
+      "data": {"meal": "lunch", "stock": 2, "orders": 1, "source": "voice-confirmed"},
+      "effective_at": 40,
+      "received_at": 40
+    }
+  },
+  {
+    "subsystem": "service",
+    "event": {
+      "id": "prep-yi",
+      "subject": "senior-yi",
+      "action": "prepare",
+      "data": {"meal": "lunch", "stock": 2, "orders": 1, "source": "voice-confirmed"},
+      "effective_at": 41,
+      "received_at": 41
+    }
+  },
+  {
+    "subsystem": "service",
+    "event": {
+      "id": "pick-jia",
+      "subject": "senior-jia",
+      "action": "pickup",
+      "data": {"prepare": "prep-jia", "share": "C1#1"},
+      "effective_at": 50,
+      "received_at": 50
+    }
+  },
+  {
+    "subsystem": "service",
+    "event": {
+      "id": "pick-yi",
+      "subject": "senior-yi",
+      "action": "pickup",
+      "data": {"prepare": "prep-yi", "share": "C1#2"},
+      "effective_at": 51,
+      "received_at": 51
+    }
+  }
+]

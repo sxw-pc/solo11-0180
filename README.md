@@ -14,7 +14,13 @@
 
 `python -m unittest discover -s tests -v`
 
-## 三个独立入口
+## 四个独立入口
+
+### 语音订餐采录
+
+`python -m mealassist demo --db voice.db --fixture fixtures/voice-orders.json`
+
+电话订餐录音按片段采录：时间轴、说话人、N-best 转写、所指旧订单、修正/分拆/撤销动作与被转赠人确认并列保存（`segments`）。份额级谱系（`shares`/`lineage`）保证每份餐只有一个当前归属人，每次修正指向确切旧录音与旧份额，拆分前后总餐数守恒，取消才释放库存；没有明确所指订单的片段先悬挂。只有经确认的逐人餐数汇入 `service.prepare` 的 orders（`source: voice-confirmed`），领取凭据指向具体份额，晚到更正不悄改已备餐承诺，差异由 `service.commitment_drift` 显式呈现。领域模块位于 `mealassist/order_capture.py`，基线 `capture` 行为由 `tests/test_voice_seed.py` 固定。
 
 ### 资格与额度
 
