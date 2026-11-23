@@ -10,6 +10,11 @@ def apply(c,e):
  if a=='pickup':
   prep=s.latest(c,'allocations',p.get('prepare',''))
   if not prep or prep['subject']!=sid or prep['state']!='prepared':return s.decide(c,e,NAME,'blocked','no-prepared-meal','blocked')
+  if p.get('delivery'):
+   handover=s.verified_handover(c,p['delivery'])
+   if not handover or handover['subject']!=sid:return s.decide(c,e,NAME,'blocked','delivery-credential-unknown','blocked')
+   if handover['state']!='verified':return s.decide(c,e,NAME,'blocked','delivery-not-verified:'+handover['reason'],'blocked')
+   if p.get('box') and handover['box_id']!=p['box']:return s.decide(c,e,NAME,'blocked','delivery-box-mismatch','blocked')
   if p.get('delegate') and not p.get('authorized'):return s.decide(c,e,NAME,'blocked','delegate-not-authorized','blocked')
   if c.execute("SELECT 1 FROM receipts WHERE subject=? AND kind='pickup' AND state=?",(sid,prep['id'])).fetchone():return s.decide(c,e,NAME,'duplicate','meal-already-picked-up','duplicate')
   c.execute('INSERT OR REPLACE INTO receipts VALUES(?,?,?,?,?)',(e['id'],sid,'pickup',prep['id'],0))

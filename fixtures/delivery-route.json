@@ -1,0 +1,291 @@
+{
+  "fixture_id": "delivery-route-1",
+  "trip_id": "trip-1",
+  "departure_ts": 32400,
+  "max_speed_kmh": 30,
+  "devices": {
+    "dev-1": {
+      "device_id": "dev-1",
+      "secret": "secret-device-1"
+    }
+  },
+  "signer_secrets": {
+    "driver": "secret-driver-1",
+    "station": "secret-station-1",
+    "camera": "secret-camera-1",
+    "vehicle": "secret-vehicle-1"
+  },
+  "network": {
+    "nodes": [
+      {
+        "id": "depot",
+        "name": "仓"
+      },
+      {
+        "id": "junction-b-west",
+        "name": "B 西路口"
+      },
+      {
+        "id": "junction-b-east",
+        "name": "B 东路口"
+      },
+      {
+        "id": "station",
+        "name": "助餐站"
+      }
+    ],
+    "edges": [
+      {
+        "id": "e-a",
+        "road": "A",
+        "from_node": "depot",
+        "to_node": "station",
+        "length_m": 10000,
+        "note": "仓到站直行"
+      },
+      {
+        "id": "e-c",
+        "road": "C",
+        "from_node": "depot",
+        "to_node": "junction-b-west",
+        "length_m": 2000,
+        "note": "西端单向连接道"
+      },
+      {
+        "id": "e-b",
+        "road": "B",
+        "from_node": "junction-b-west",
+        "to_node": "junction-b-east",
+        "length_m": 10000,
+        "note": "与 A 平行的道路"
+      },
+      {
+        "id": "e-d",
+        "road": "D",
+        "from_node": "junction-b-east",
+        "to_node": "station",
+        "length_m": 2000,
+        "note": "东端单向连接道"
+      },
+      {
+        "id": "e-shortcut",
+        "road": "SHORTCUT",
+        "from_node": "junction-b-west",
+        "to_node": "station",
+        "length_m": 5000,
+        "abstract": true,
+        "note": "未实测穿山路，仅用于转向限制演示"
+      },
+      {
+        "id": "e-a-rev",
+        "road": "A",
+        "from_node": "station",
+        "to_node": "depot",
+        "length_m": 10000
+      },
+      {
+        "id": "e-c-rev",
+        "road": "C",
+        "from_node": "junction-b-west",
+        "to_node": "depot",
+        "length_m": 2000
+      },
+      {
+        "id": "e-b-rev",
+        "road": "B",
+        "from_node": "junction-b-east",
+        "to_node": "junction-b-west",
+        "length_m": 10000
+      },
+      {
+        "id": "e-d-rev",
+        "road": "D",
+        "from_node": "station",
+        "to_node": "junction-b-east",
+        "length_m": 2000
+      }
+    ],
+    "turn_restrictions": [
+      {
+        "id": "tr-1",
+        "at_node": "junction-b-west",
+        "from_edge": "e-c",
+        "to_edge": "e-shortcut",
+        "kind": "forbidden",
+        "note": "西路口禁止由连接道转入穿山路"
+      }
+    ]
+  },
+  "gps_packets": [
+    {
+      "id": "gps-1",
+      "device_id": "dev-1",
+      "ts": 32400,
+      "device_ts": 32402,
+      "node": "depot",
+      "x_m": 0,
+      "y_m": 0,
+      "clock": {
+        "offset_s": 2,
+        "drift_ppm": 5
+      },
+      "ellipse": {
+        "semi_major_m": 6,
+        "semi_minor_m": 4,
+        "bearing_deg": 90,
+        "confidence": 0.95
+      },
+      "candidates": [
+        {
+          "road": "A",
+          "distance_m": 1,
+          "along_m": 0
+        },
+        {
+          "road": "B",
+          "distance_m": 4000,
+          "along_m": 0
+        }
+      ],
+      "packet_sha256": "e96e71033a85ebc8d694f3f127ed92ea57910231751254224927b6f1710f47f7",
+      "device_signature": "3e1be5dc56ca55a4f3f6a90838208b90a28444da0858f57b901f3a3ddac5403c"
+    },
+    {
+      "id": "gps-2",
+      "device_id": "dev-1",
+      "ts": 33600,
+      "device_ts": 33602,
+      "x_m": 5000,
+      "y_m": -4,
+      "clock": {
+        "offset_s": 2,
+        "drift_ppm": 5
+      },
+      "ellipse": {
+        "semi_major_m": 6,
+        "semi_minor_m": 4,
+        "bearing_deg": 90,
+        "confidence": 0.95
+      },
+      "candidates": [
+        {
+          "road": "A",
+          "distance_m": 6,
+          "along_m": 5000
+        },
+        {
+          "road": "B",
+          "distance_m": 2,
+          "along_m": 5000
+        }
+      ],
+      "packet_sha256": "51faa1078bf14de5da6ad61af06e0947041e121ab585f0f0edae184bcf4d1c17",
+      "device_signature": "24d3da7e2f6a501693fa3aad382297743994ac80599bd30dc0e22e100bfe96a4"
+    },
+    {
+      "id": "gps-3",
+      "device_id": "dev-1",
+      "ts": 34800,
+      "device_ts": 34802,
+      "node": "station",
+      "x_m": 10000,
+      "y_m": 0,
+      "clock": {
+        "offset_s": 2,
+        "drift_ppm": 5
+      },
+      "ellipse": {
+        "semi_major_m": 6,
+        "semi_minor_m": 4,
+        "bearing_deg": 90,
+        "confidence": 0.95
+      },
+      "candidates": [
+        {
+          "road": "A",
+          "distance_m": 1,
+          "along_m": 10000
+        },
+        {
+          "road": "B",
+          "distance_m": 4000,
+          "along_m": 10000
+        }
+      ],
+      "packet_sha256": "1d1141ab47ef78fa55c0271c9ee65154e04e9a424254e4e9162c273eba976f50",
+      "device_signature": "fbdf41a438c104d0415fefd294dac9aed9e836482b0c33064a583d5eb5a9f1ec"
+    }
+  ],
+  "signed_stops": [
+    {
+      "stop_id": "stop-mid-b",
+      "road": "B",
+      "along_m": 5000,
+      "observed_ts": 33600,
+      "window_start_ts": 33540,
+      "window_end_ts": 33660,
+      "box_id": "box-2",
+      "senior_id": "senior-2",
+      "signatures": {
+        "driver": "e871178b80f4f14fd030cd61c502341015669eafd84532127b7f5a33a847c68f",
+        "station": "fd84c605b134d0059c6fdc08f3e08711fa93714e8fe391ea77d8b84d860616a7"
+      }
+    }
+  ],
+  "handovers": [
+    {
+      "handover_id": "ho-mid-b",
+      "kind": "mid-route-stop",
+      "road": "B",
+      "observed_ts": 33600,
+      "box_id": "box-2",
+      "senior_id": "senior-2",
+      "signatures": {
+        "driver": "c33d583555d84d657ee9a912c9ae9be853cf79a183cef3e1227d6b3b5ca10364",
+        "station": "62b159c904c9c5c278b68c4217160fd0fb869eda25632cdfc3efb64f476f3b9d"
+      }
+    },
+    {
+      "handover_id": "ho-station",
+      "kind": "station-arrival",
+      "road": "A",
+      "observed_ts": 34800,
+      "box_id": "box-1",
+      "senior_id": "senior-1",
+      "signatures": {
+        "driver": "9216aec12aea5819b69573e6f0d4a7b58e322fdc73b348a1e07367cb6bd886fe",
+        "station": "68b3a4438f9eceac5c920a504431736c4e0e5061f87429559948af652ca64ce3"
+      }
+    }
+  ],
+  "evidence": {
+    "direct_a": {
+      "camera_frame": {
+        "frame_id": "cam-1",
+        "captured_ts": 33600,
+        "road": "A",
+        "drift_to_road": "B",
+        "note": "相机显示车辆在 A，GPS 向 B 漂移",
+        "frame_sha256": "501a8eb96bc01621656d6a2373adee06a07304b33df4c173cbf444fd56e22cac",
+        "camera_signature": "b33168c1d8ae9cbc6f736ffbe64e500c027416218714b30939c3e9613b2a9b30"
+      },
+      "odometer": {
+        "odometer_id": "odo-1",
+        "start_reading_m": 120000,
+        "end_reading_m": 130000,
+        "note": "里程表全程 10km",
+        "signatures": {
+          "vehicle": "28d6e3b46a2041da8d4ab9412dccfabd50c36e0a17ee5b8fb1a5a5ecccf78ff2"
+        }
+      },
+      "tolerance_m": 50
+    },
+    "late_arrival_claim": {
+      "evidence_id": "late-1",
+      "handover_id": "ho-late",
+      "kind": "station-arrival",
+      "observed_ts": 35100,
+      "note": "晚到证据 09:45 才送达，只能追加更正"
+    }
+  }
+}
