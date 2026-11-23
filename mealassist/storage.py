@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY, subsystem TEXT NOT NULL, 
 CREATE TABLE IF NOT EXISTS decisions(id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL, subsystem TEXT NOT NULL, subject TEXT NOT NULL, outcome TEXT NOT NULL, reason TEXT NOT NULL, state TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS subjects(id TEXT PRIMARY KEY, kind TEXT NOT NULL, state TEXT NOT NULL, version INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS documents(id TEXT PRIMARY KEY, subject TEXT NOT NULL, kind TEXT NOT NULL, version INTEGER NOT NULL, state TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS allocations(id TEXT PRIMARY KEY, subject TEXT NOT NULL, resource TEXT NOT NULL, state TEXT NOT NULL, version INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS allocations(id TEXT PRIMARY KEY, subject TEXT NOT NULL, resource TEXT NOT NULL, state TEXT NOT NULL, version INTEGER NOT NULL, instance TEXT NOT NULL DEFAULT '');
 CREATE TABLE IF NOT EXISTS receipts(id TEXT PRIMARY KEY, subject TEXT NOT NULL, kind TEXT NOT NULL, state TEXT NOT NULL, amount INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS calendar_events(id TEXT PRIMARY KEY, source TEXT NOT NULL, uid TEXT NOT NULL, recurrence_key TEXT, kind TEXT NOT NULL, sequence INTEGER NOT NULL, dtstamp TEXT, arrival INTEGER NOT NULL, payload TEXT NOT NULL, digest TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS booking_instances(id TEXT PRIMARY KEY, series_id TEXT NOT NULL, source TEXT NOT NULL, uid TEXT NOT NULL, seq INTEGER, rkey TEXT, domain TEXT, local TEXT, tzid TEXT, utc TEXT, window_end TEXT, candidates TEXT, fold INTEGER, status TEXT NOT NULL, time_mode TEXT, attest_version INTEGER, sequence INTEGER, meal TEXT, rescheduled INTEGER NOT NULL DEFAULT 0);
 """
 
 def connect(path):
@@ -18,7 +20,13 @@ def connect(path):
         con=sqlite3.connect(path)
     con.row_factory=sqlite3.Row
     con.executescript(SCHEMA)
+    _migrate(con)
     return con
+
+def _migrate(con):
+    cols=[r['name'] for r in con.execute('PRAGMA table_info(allocations)')]
+    if cols and 'instance' not in cols:
+        con.execute("ALTER TABLE allocations ADD COLUMN instance TEXT NOT NULL DEFAULT ''")
 
 def record(con, subsystem, event):
     raw=json.dumps(event,ensure_ascii=False,sort_keys=True,separators=(',',':'))
@@ -28,6 +36,23 @@ def record(con, subsystem, event):
         if old['digest'] != digest: raise ValueError('event-id-conflict')
         return False
     con.execute('INSERT INTO events VALUES(?,?,?,?,?,?,?,?)',(event['id'],subsystem,event['action'],event['subject'],int(event.get('effective_at',0)),int(event.get('received_at',0)),raw,digest))
+    return True
+
+def record_calendar(con, rec):
+    """Append one non-mergeable ICS component version; idempotent by digest.
+
+    rec: {'source','uid','recurrence_key','kind','sequence','dtstamp','payload'}.
+    The version id embeds the content digest, so re-imports are no-ops while
+    conflicting contents at the same sequence coexist as distinct versions
+    and are resolved deterministically by (sequence, dtstamp, digest).
+    """
+    payload=json.dumps(rec['payload'],ensure_ascii=False,sort_keys=True,separators=(',',':'))
+    digest=hashlib.sha256(payload.encode()).hexdigest()
+    vid=':'.join([rec['source'],rec['uid'],rec['recurrence_key'] or '',rec['kind'],str(rec['sequence']),digest[:16]])
+    if con.execute('SELECT 1 FROM calendar_events WHERE id=?',(vid,)).fetchone():
+        return False
+    arrival=con.execute('SELECT COALESCE(MAX(arrival),0)+1 x FROM calendar_events').fetchone()['x']
+    con.execute('INSERT INTO calendar_events VALUES(?,?,?,?,?,?,?,?,?,?)',(vid,rec['source'],rec['uid'],rec['recurrence_key'],rec['kind'],int(rec['sequence']),rec['dtstamp'],arrival,payload,digest))
     return True
 
 def decide(con,event,subsystem,outcome,reason,state):
@@ -40,4 +65,4 @@ def latest(con, table, key):
 def report(con):
     events=[dict(x) for x in con.execute('SELECT id,subsystem,action,subject,effective_at,digest FROM events ORDER BY effective_at,id')]
     decisions=[dict(x) for x in con.execute('SELECT event_id,subsystem,subject,outcome,reason,state FROM decisions ORDER BY id')]
-    return {'events':events,'decisions':decisions,'subjects':[dict(x) for x in con.execute('SELECT * FROM subjects ORDER BY id')], 'allocations':[dict(x) for x in con.execute('SELECT * FROM allocations ORDER BY id')], 'receipts':[dict(x) for x in con.execute('SELECT * FROM receipts ORDER BY id')]}
+    return {'events':events,'decisions':decisions,'subjects':[dict(x) for x in con.execute('SELECT * FROM subjects ORDER BY id')], 'allocations':[dict(x) for x in con.execute('SELECT * FROM allocations ORDER BY id')], 'receipts':[dict(x) for x in con.execute('SELECT * FROM receipts ORDER BY id')], 'calendar_events':[dict(x) for x in con.execute('SELECT * FROM calendar_events ORDER BY id')], 'booking_instances':[dict(x) for x in con.execute('SELECT * FROM booking_instances ORDER BY id')]}
