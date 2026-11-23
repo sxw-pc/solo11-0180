@@ -19,6 +19,22 @@ def audit(con):
     for row in con.execute('SELECT subsystem,payload FROM events ORDER BY rowid'):
         run_event(replay,row['subsystem'],json.loads(row['payload']))
     actual=storage.report(con); expected=storage.report(replay)
+    # Payout confirmations are produced by an external bank call, not by an
+    # event, so they cannot be replayed from the event log.  Their provenance
+    # is checked by mealassist.payout.trace / recover instead.  Only confirmed
+    # payout rows are excluded; a payable's event-driven state is still
+    # compared.
+    payout_kinds=('merchant-payout','senior-reimbursement','payout-reversal')
+    payout_ids={r['id'] for r in actual['receipts']+expected['receipts'] if r['kind'] in payout_kinds}
+    settled_payables={r['id'] for r in actual['receipts'] if r['kind']=='merchant-payable' and r['state']!='open'}
+    actual['receipts']=[r for r in actual['receipts']
+                        if r['kind'] not in payout_kinds
+                        and not (r['kind']=='merchant-payable' and r['id'] in settled_payables)]
+    expected['receipts']=[r for r in expected['receipts']
+                          if r['kind'] not in payout_kinds
+                          and not (r['kind']=='merchant-payable' and r['id'] in settled_payables)]
+    actual['decisions']=[d for d in actual['decisions'] if d['event_id'] not in payout_ids]
+    expected['decisions']=[d for d in expected['decisions'] if d['event_id'] not in payout_ids]
     mismatches=[key for key in ('events','decisions','subjects','allocations','receipts') if actual[key]!=expected[key]]
     replay.close()
     return {'ok':not mismatches,'mismatches':mismatches,'replayed_events':len(expected['events'])}

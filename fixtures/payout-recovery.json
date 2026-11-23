@@ -1,0 +1,56 @@
+{
+  "description": "Offline recovery scenario for the merchant payout breakpoint. Each step runs with python -c or is consumed by tests/test_payout_recovery.py.",
+  "payable": {"id": "p1", "subject": "senior-1", "kind": "merchant-payable", "state": "open", "amount": 15},
+  "merchant": "shop-A",
+  "steps": [
+    {
+      "name": "PAY1 breaks after the bank moved money",
+      "call": "payout.pay(db, bank_file, 'PAY1', 'shop-A', 'p1', fail_after_bank=True)",
+      "expect": {
+        "raises": "connection_lost_after_bank",
+        "bank": [{"payment_id": "PAY1", "idempotency_key": "p1", "payee": "shop-A", "amount": 15, "status": "transferred"}],
+        "local_payouts": 0,
+        "payable_state": "open"
+      }
+    },
+    {
+      "name": "a naive queue retries with PAY2",
+      "call": "payout.pay(db, bank_file, 'PAY2', 'shop-A', 'p1')",
+      "expect": {
+        "adopts_payment_id": "PAY1",
+        "bank_payments_for_key": 1,
+        "bank_total": 15,
+        "local_payouts": 1,
+        "payable_state": "settled"
+      }
+    },
+    {
+      "name": "recovery is replay-safe",
+      "call": "payout.recover(db, bank_file)",
+      "expect": {"settled_intents": 1, "bank_payments_for_key": 1, "local_payouts": 1}
+    },
+    {
+      "name": "bank result unknown keeps the payable frozen",
+      "call": "payout.pay(db, bank2_file, 'PAY3', 'shop-B', 'p2', bank_status='unknown')",
+      "expect": {"state": "unknown", "payable_state": "pending", "second_pay_state": "unknown", "bank_payments_for_key": 1}
+    },
+    {
+      "name": "bank conflict is preserved, not overwritten",
+      "call": "payout.pay(db, bank3_file, 'PAY4', 'shop-C', 'p3', bank_status='conflict')",
+      "expect": {"state": "frozen", "payable_state": "frozen", "bank_rows_preserved": 1}
+    }
+  ],
+  "funding_paths": [
+    {
+      "name": "city subsidy pays the merchant in full",
+      "redeem": {"funding_source": "city_subsidy", "merchant": "shop-A"},
+      "pay": {"amount": 15, "payee": "shop-A", "budget_account": "city-subsidy-account", "budget_amount": 15, "recourse": "merchant"}
+    },
+    {
+      "name": "site reimburses the senior after merchant payment proof",
+      "proof_event": {"action": "senior_payment", "merchant": "shop-A", "amount": 15},
+      "redeem": {"funding_source": "senior_reimbursement", "merchant": "shop-A", "payment_proof": "senior_payment event id"},
+      "pay": {"amount": 10, "payee": "senior-1", "budget_account": "senior-reimbursement-account", "budget_amount": 10, "recourse": "senior"}
+    }
+  ]
+}
